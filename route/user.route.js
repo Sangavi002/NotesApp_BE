@@ -6,7 +6,7 @@ const jwt = require("jsonwebtoken")
 
 
 userRouter.post("/register", async (req, res) => {
-    const { username, password,role } = req.body;
+    const { firstname,lastname,username, password, } = req.body;
     try {
         const existingUser = await UserModel.findOne({ username });
         if (existingUser) {
@@ -16,7 +16,7 @@ userRouter.post("/register", async (req, res) => {
             if (err) {
                 res.status(500).send({ "msg": "Something went wrong." });
             } else {
-                const user = new UserModel({ username, password: hash, role });
+                const user = new UserModel({ firstname,lastname,username, password: hash });
                 await user.save();
                 res.status(200).send({ "msg": "Successfully Signed In." });
             }
@@ -42,10 +42,10 @@ userRouter.post("/login",async(req,res) => {
                 }
             })
         }else{
-            res.status(404).send({"msg": "Wrong crendentails."})
+            res.status(401).send({"msg": "Wrong crendentails."})
         }
     }catch(err){
-        res.status(404).send({"msg": "Error in login."});
+        res.status(401).send({"msg": "Error in login."});
     }
 })
 
