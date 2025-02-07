@@ -10,7 +10,7 @@ userRouter.post("/register", async (req, res) => {
     try {
         const existingUser = await UserModel.findOne({ username });
         if (existingUser) {
-            return res.status(400).send({ "msg": "Email already exists." });
+            return res.status(400).send({ "msg": "Username already exists." });
         }
         bcryptjs.hash(password, 10, async (err, hash) => {
             if (err) {
@@ -18,11 +18,11 @@ userRouter.post("/register", async (req, res) => {
             } else {
                 const user = new UserModel({ username, password: hash, role });
                 await user.save();
-                res.status(200).send({ "msg": "Successfully Registered." });
+                res.status(200).send({ "msg": "Successfully Signed In." });
             }
         })
     } catch (err) {
-        res.status(500).send({ "msg": "Failed to register." });
+        res.status(500).send({ "msg": "Failed to Signed In." });
     }
 });
 
@@ -38,7 +38,7 @@ userRouter.post("/login",async(req,res) => {
                     let token = jwt.sign({id: user._id},process.env.JWT_SECRET)
                     res.status(200).send({"msg":"Logged In successfully.","Token": token,"UserId":user._id});
                 }else{
-                    res.status(404).send({"msg": "Wrong paswword."});
+                    res.status(404).send({"msg": "Wrong password."});
                 }
             })
         }else{

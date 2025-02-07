@@ -3,15 +3,18 @@ const dotenv = require("dotenv");
 dotenv.config();
 const connection = require("./config/db");
 const userRouter = require("./route/user.route")
+const notesrouter = require("./route/note.route")
+
 const cors = require("cors")
 
 const app = express();
 const port = process.env.PORT;
 
 app.use(express.json());
-app.use(cors())
+app.use(cors({ origin: "http://localhost:3000" }))
 
 app.use("/user",userRouter)
+app.use("/content",notesrouter)
 
 app.get("/",(req,res) => {
     res.status(200).send({"msg": "Health check"})
