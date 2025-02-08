@@ -57,6 +57,9 @@ notesrouter.put('/notes/:id', auth, upload.array('images', 5), async (req, res) 
 
         
         const newImages = req.files ? req.files.map(file => file.path) : [];
+        if (req.body.images && typeof req.body.images === 'string') {
+            newImages.push(req.body.images); 
+        }
 
         const existingNote = await NotesModel.findOne({ _id: noteId, userId: userId });
         if (!existingNote) {
