@@ -1,7 +1,9 @@
 const mongoose = require('mongoose');
 
 const noteSchema = mongoose.Schema({
+    title: { type: String},
     text: { type: String, required: true },
+    images: [{ type: String }],
     createdAt: { 
         type: String, 
         default: () => new Date().toLocaleString('en-GB', { 

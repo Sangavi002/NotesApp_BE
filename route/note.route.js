@@ -2,18 +2,28 @@ const express = require('express');
 const notesrouter = express.Router();
 const NotesModel = require('../model/note.model');
 const auth = require('../middleware/auth.middleware'); 
+const upload = require('../config/multer.config');
 
-// Create note route with authentication
-notesrouter.post('/notes', auth, async (req, res) => {
+notesrouter.post('/notes', auth, upload.array('images', 5), async (req, res) => {
     try {
-        const { text, userId } = req.body; 
-        const note = new NotesModel({ text, userId }); 
-        await note.save();
-        res.status(201).json(note);
+        const { title, text, userId } = req.body;
+        const imagePaths = req.files ? req.files.map(file => file.path) : []; // Extract image paths
+
+        const newNote = new NotesModel({
+            title: title || '',
+            text,
+            userId,
+            images: imagePaths 
+        });
+
+        await newNote.save();
+        res.status(201).json(newNote);
     } catch (error) {
-        res.status(500).json({ error: 'Failed to save note' });
+        res.status(500).json({ error: 'Failed to create the note' });
     }
 });
+
+
 
 notesrouter.get('/notes', auth, async (req, res) => {
     try {
@@ -21,21 +31,6 @@ notesrouter.get('/notes', auth, async (req, res) => {
         res.status(200).json(notes);
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch notes' });
-    }
-});
-
-notesrouter.get('/notes/:id', auth, async (req, res) => {
-    try {
-        const noteId = req.params.id;
-        const note = await NotesModel.findOne({ _id: noteId, userId: req.body.userId });
-
-        if (!note) {
-            return res.status(404).json({ error: 'Note not found' });
-        }
-
-        res.status(200).json(note);
-    } catch (error) {
-        res.status(500).json({ error: 'Failed to fetch the note' });
     }
 });
 
@@ -55,26 +50,36 @@ notesrouter.delete('/notes/:id', auth, async (req, res) => {
 });
 
 
-notesrouter.put('/notes/:id', auth, async (req, res) => {
+notesrouter.put('/notes/:id', auth, upload.array('images', 5), async (req, res) => {
     try {
         const noteId = req.params.id;
-        const { text } = req.body;
+        const { title, text, userId } = req.body;
 
-        const updatedNote = await NotesModel.findOneAndUpdate(
-            { _id: noteId, userId: req.body.userId },
-            { text },
-            { new: true } 
-        );
+        
+        const newImages = req.files ? req.files.map(file => file.path) : [];
 
-        if (!updatedNote) {
+        const existingNote = await NotesModel.findOne({ _id: noteId, userId: userId });
+        if (!existingNote) {
             return res.status(404).json({ error: 'Note not found or unauthorized' });
         }
 
+    
+        const updatedImages = [...existingNote.images, ...newImages].slice(0, 5);
+
+        
+        const updatedNote = await NotesModel.findOneAndUpdate(
+            { _id: noteId, userId: userId },
+            { title, text, images: updatedImages },
+            { new: true }
+        );
+
         res.status(200).json(updatedNote);
     } catch (error) {
+        console.error(error);
         res.status(500).json({ error: 'Failed to update the note' });
     }
 });
+
 
 
 module.exports = notesrouter;
