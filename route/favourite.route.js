@@ -42,7 +42,7 @@ favouriterouter.delete('/favorites/:noteId', auth, async (req, res) => {
 
 favouriterouter.get('/favorites', auth, async (req, res) => {
     try {
-        const userId = req.userId || req.body.userId; // Fallback to req.body.userId
+        const userId = req.userId || req.body.userId; 
 
         if (!userId) {
             return res.status(400).json({ error: 'User ID is missing' });
@@ -52,7 +52,7 @@ favouriterouter.get('/favorites', auth, async (req, res) => {
 
         res.status(200).json(favorites.map(fav => fav.noteId));
     } catch (error) {
-        console.error('Error fetching favorites:', error); // Log the error
+        console.error('Error fetching favorites:', error); 
         res.status(500).json({ error: 'Failed to fetch favorites' });
     }
 });
