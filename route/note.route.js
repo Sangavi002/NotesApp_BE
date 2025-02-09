@@ -7,6 +7,14 @@ const upload = require('../config/multer.config');
 const axios = require('axios');
 const formData = require('form-data');
 
+const cloudinary = require('cloudinary').v2;
+
+cloudinary.config({
+    cloud_name: 'djk6xqfah',
+    api_key: '836965336523849',
+    api_secret: '2w7pZc1TEhR4FxlCdRjkJSD60M8'
+});
+
 notesrouter.post('/notes', auth, async (req, res) => {
     try {
         const { title, text, userId } = req.body;
@@ -53,46 +61,62 @@ notesrouter.delete('/notes/:id', auth, async (req, res) => {
 notesrouter.put('/notes/:id', auth, upload.array('images', 5), async (req, res) => {
     try {
         const noteId = req.params.id;
-        const { title, text, userId } = req.body;
+        const { title, text, userId, existingImages = [] } = req.body; // ✅ existingImages from request
 
         const newImages = [];
+
+        // Upload Image to Cloudinary
+        const uploadImage = (fileBuffer) => {
+            return new Promise((resolve, reject) => {
+                const uploadStream = cloudinary.uploader.upload_stream(
+                    { resource_type: 'image' },
+                    (error, result) => {
+                        if (error) {
+                            console.error('Upload Error:', error);
+                            return reject(error);
+                        }
+                        resolve(result.secure_url); // Store secure URL
+                    }
+                );
+                uploadStream.end(fileBuffer); // Start upload
+            });
+        };
+
+        // Upload New Images
         if (req.files && req.files.length > 0) {
             for (const file of req.files) {
-                const form = new formData();
-                form.append('image', file.buffer.toString('base64'));
-
-                const response = await axios.post(
-                    `https://api.imgbb.com/1/upload?key=48d30aa1480ac6273b614753126532e5`,
-                    form,
-                    { headers: form.getHeaders(), timeout: 10000 } // 10 seconds timeout
-                );
-
-                newImages.push(response.data.data.url);
+                const imageUrl = await uploadImage(file.buffer);
+                newImages.push(imageUrl);
             }
         }
 
+        // Find the existing note
         const existingNote = await NotesModel.findOne({ _id: noteId, userId });
         if (!existingNote) {
             return res.status(404).json({ error: 'Note not found or unauthorized' });
         }
 
-        const updatedImages = [...newImages].slice(0, 5);
+        // Filter existing images: Keep only those present in the request
+        const filteredExistingImages = existingNote.images.filter(img => existingImages.includes(img));
 
+        // Merge filtered existing images with new images (limit to 5)
+        const updatedImages = [...filteredExistingImages, ...newImages].slice(0, 5);
+
+        // ✅ Update the note with title, text, and updated images
         const updatedNote = await NotesModel.findOneAndUpdate(
             { _id: noteId, userId },
             { title, text, images: updatedImages },
-            { new: true }
+            { new: true } // Return the updated note
         );
 
-        res.status(200).json({ 
-            message: 'Note updated successfully', 
-            updatedNote 
-        });
+        res.status(200).json({ message: 'Note updated successfully', updatedNote });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Failed to update the note' });
     }
 });
+
+
 
 module.exports = notesrouter;
 
