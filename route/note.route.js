@@ -62,9 +62,9 @@ notesrouter.put('/notes/:id', auth, upload.array('images', 5), async (req, res) 
                 form.append('image', file.buffer.toString('base64'));
 
                 const response = await axios.post(
-                    `https://api.imgbb.com/1/upload?key=48d30aa1480ac6273b614753126532e5`, // Replace with your actual API key
+                    `https://api.imgbb.com/1/upload?key=48d30aa1480ac6273b614753126532e5`,
                     form,
-                    { headers: form.getHeaders() }
+                    { headers: form.getHeaders(), timeout: 10000 } // 10 seconds timeout
                 );
 
                 newImages.push(response.data.data.url);
