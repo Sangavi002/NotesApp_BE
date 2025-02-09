@@ -76,7 +76,10 @@ notesrouter.put('/notes/:id', auth, upload.array('images', 5), async (req, res) 
             { new: true }
         );
 
-        res.status(200).json(updatedNote);
+        res.status(200).json({ 
+            message: "Note updated successfully", 
+            updatedNote 
+        });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Failed to update the note' });
